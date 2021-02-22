@@ -20,7 +20,7 @@ function rorAutoInviter.OnInitialize()
         
     end
 
-    LibSlash.RegisterSlashCmd("aa", function(args) rorAutoInviter.SlashCmd(args) end);
+    LibSlash.RegisterSlashCmd("ai", function(args) rorAutoInviter.SlashCmd(args) end);
 
 end
 
@@ -111,15 +111,15 @@ function rorAutoInviter.HandleAcceptCommand(parameter)
         Print('Unknown argument:' ..parameter .."(Supported: guild, known, all, off)");
     end
     
-    Print('[AA] Guild: ' .. tostring(rorAutoInviter.Settings.inviteGuild));
-    Print('[AA] Known: ' .. tostring(rorAutoInviter.Settings.inviteKnown));
-    Print('[AA] All: ' .. tostring(rorAutoInviter.Settings.inviteAll));
+    Print('[AI] Guild: ' .. tostring(rorAutoInviter.Settings.inviteGuild));
+    Print('[AI] Known: ' .. tostring(rorAutoInviter.Settings.inviteKnown));
+    Print('[AI] All: ' .. tostring(rorAutoInviter.Settings.inviteAll));
 
 end
 
 function rorAutoInviter.HandleSetInviteKey(parameter)
     rorAutoInviter.Settings.inviteString = parameter;
-    Print("[AA] Invite key set to :" ..parameter);
+    Print("[AI] Invite key set to :" ..parameter);
 end
 
 function rorAutoInviter.SlashCmd(args)
@@ -143,12 +143,12 @@ function rorAutoInviter.SlashCmd(args)
     else
         Print('---- RoR Auto Inviter ----');
         Print('Commands :');
-        Print('/aa accept [guild | known | all | off]');
+        Print('/ai accept [guild | known | all | off]');
         Print('Guild: ' .. tostring(rorAutoInviter.Settings.inviteGuild));
         Print('Known: ' .. tostring(rorAutoInviter.Settings.inviteKnown));
         Print('All: ' .. tostring(rorAutoInviter.Settings.inviteAll));
-        Print('/aa key [value] : Change the key for AA to invite a character.');
+        Print('/ai key [value] : Change the key for AA to invite a character.');
         Print('CURRENT :' ..rorAutoInviter.Settings.inviteString);
-        Print('/aa broadcast : Broadcast a message into the guild chat to advertise your warband');
+        Print('/ai broadcast : Broadcast a message into the guild chat to advertise your warband');
     end
 end
