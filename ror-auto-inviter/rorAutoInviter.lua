@@ -61,25 +61,44 @@ function rorAutoInviter.OnMessageReceived()
     local textMatch = msg == tostring(inviteString);
 
     local isGroupLeader = GameData.Player.isGroupLeader;
+    local nbGroupMates = GetNumGroupmates();`
+    local isInWarband = IsWarBandActive();
+    local isInGroup = nbGroupMates > 0;
 
-    if not isGroupLeader then
-        SendChatText (towstring("/w " .. author) .." Sorry, I am not the leader of my group", L"");
+    if not textMatch then
         return;
     end
 
-    if(IsPlayerInAGuild and textMatch and (inviteGuild or inviteAll or inviteKnown)) then
+    if not isGroupLeader and isInGroup then
+        local leader = PartyUtils.GetWarbandLeader();
+
+        SendChatText (towstring("/w " .. author) .." Sorry, I am not the leader of the group, please refer to " ..leader.name, L"");
+        return;
+    end
+
+    if PartyUtils.IsWarbandFull() then
+        SendChatText (towstring("/w " .. author) .." Sorry, group is full", L"");
+        return;
+    end
+
+    local canInviteGuild = inviteGuild or inviteAll or inviteKnown;
+    if(IsPlayerInAGuild and canInviteGuild) then
         guildMemberData = GetGuildMemberData();
 
         willInvite = rorAutoInviter.IsInTable(guildMemberData, author);
     end
 
-    if (textMatch and not willInvite and (inviteKnown or inviteAll)) then
+    local canInviteFriends = inviteKnown or inviteAll;
+    if (not willInvite and canInviteFriends) then
         local friendData = GetFriendsList();
 
         willInvite = rorAutoInviter.IsInTable(friendData, author);
     end
 
     if willInvite then
+        if(not isInWarband and nbGroupMates == 6) then
+            
+        end
         SendChatText (towstring("/invite " .. author), L"");
     else
         SendChatText (towstring("/w " .. author) .."Sorry you are not eligible for this group.", L"");

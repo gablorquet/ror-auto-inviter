@@ -5,6 +5,7 @@
 		<Description text="Helps group leader with group invites" />
 		<VersionSettings gameVersion="1.4.8" windowsVersion="0.1" />
 		<Dependencies>
+			<Dependency name="EASystem_Utils" />
 			<Dependency name="LibSlash" optional="false" forceEnable="true" />
 		</Dependencies>
 
