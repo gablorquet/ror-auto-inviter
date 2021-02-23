@@ -61,7 +61,7 @@ function rorAutoInviter.OnMessageReceived()
     local textMatch = msg == tostring(inviteString);
 
     local isGroupLeader = GameData.Player.isGroupLeader;
-    local nbGroupMates = GetNumGroupmates();`
+    local nbGroupMates = GetNumGroupmates();
     local isInWarband = IsWarBandActive();
     local isInGroup = nbGroupMates > 0;
 
