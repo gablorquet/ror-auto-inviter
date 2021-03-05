@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ModuleFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<UiMod name="rorAutoInviter" version="0.1" date="02/20/2021" >
+	<UiMod name="rorAutoInviter" version="0.2" date="02/20/2021" >
 		<Author name="Artighur" />
 		<Description text="Helps group leader with group invites" />
 		<VersionSettings gameVersion="1.4.8" windowsVersion="0.1" />

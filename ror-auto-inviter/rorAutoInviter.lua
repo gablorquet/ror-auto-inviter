@@ -1,6 +1,7 @@
 if not rorAutoInviter then rorAutoInviter = {} end
 
 local IsPlayerInAGuild = true;
+local currentVersion = 2;
 
 local function Print(str)
     EA_ChatWindow.Print(towstring(str));
@@ -10,22 +11,34 @@ function rorAutoInviter.OnInitialize()
     IsPlayerInAGuild = GuildWindow.IsPlayerInAGuild();
 
     RegisterEventHandler( SystemData.Events.CONVERSATION_TEXT_ARRIVED, "rorAutoInviter.OnMessageReceived");
+    
+    rorAutoInviter.Migrate();
 
-    if not rorAutoInviter.Settings then
+    LibSlash.RegisterSlashCmd("ai", function(args) rorAutoInviter.SlashCmd(args) end);
+end
+
+function rorAutoInviter.OnShutdown()
+    UnregisterEventHandler(SystemData.Events.CONVERSATION_TEXT_ARRIVED, "rorAutoInviter.OnMessageReceived");
+end
+
+function rorAutoInviter.Migrate()
+    if (not rorAutoInviter.Settings) then
         rorAutoInviter.Settings = {};
+        rorAutoInviter.Settings.version = currentVersion;
         rorAutoInviter.Settings.inviteGuild = true;
         rorAutoInviter.Settings.inviteAlliance = true;
         rorAutoInviter.Settings.inviteKnown = true;
         rorAutoInviter.Settings.inviteAll = false;
         rorAutoInviter.Settings.inviteString = "+";
+        rorAutoInviter.Settings.broadcastMessage = "WAR is going on! Send me a tell with %key% to get invited!";
+        rorAutoInviter.Settings.broadcastChannel = "g";
     end
 
-    LibSlash.RegisterSlashCmd("ai", function(args) rorAutoInviter.SlashCmd(args) end);
-
-end
-
-function rorAutoInviter.OnShutdown()
-    UnregisterEventHandler(SystemData.Events.CONVERSATION_TEXT_ARRIVED, "rorAutoInviter.OnMessageReceived");
+    --Migrate from v1
+    if(not rorAutoInviter.Settings.version) then
+        rorAutoInviter.Settings.broadcastMessage = "WAR is going on! Send me a tell with %key% to get invited!";
+        rorAutoInviter.Settings.broadcastChannel = "g";
+    end
 end
 
 function rorAutoInviter.IsInTable(table, character)
@@ -56,7 +69,7 @@ function rorAutoInviter.OnMessageReceived()
     local inviteKnown = rorAutoInviter.Settings.inviteKnown;
     local inviteString = rorAutoInviter.Settings.inviteString;
 
-    local willInvite = false;
+    local willInvite = inviteAll;
     local textMatch = msg == tostring(inviteString);
 
     local isGroupLeader = GameData.Player.isGroupLeader;
@@ -82,13 +95,13 @@ function rorAutoInviter.OnMessageReceived()
     end
 
     local canInviteGuild = inviteGuild or inviteAll or inviteKnown;
-    if(IsPlayerInAGuild and canInviteGuild) then
+    if(not willInvite and IsPlayerInAGuild and canInviteGuild) then
         local guildMemberData = GetGuildMemberData();
 
         willInvite = rorAutoInviter.IsInTable(guildMemberData, author);
     end
 
-    local canInviteAlliance = isInAlliance and inviteAlliance;
+    local canInviteAlliance = isInAlliance and (inviteAlliance or inviteAll or inviteKnown);
     if (not willInvite and canInviteAlliance) then
         local allianceData = GetAllianceMemberData();
 
@@ -110,7 +123,10 @@ function rorAutoInviter.OnMessageReceived()
 end
 
 function rorAutoInviter.HandleBroadcastCommand()
-    SendChatText(towstring("/g WAR is going on! Send me a tell with " ..rorAutoInviter.Settings.inviteString .." to get invited!"), L"")
+    local message = string.gsub(rorAutoInviter.Settings.broadcastMessage, "%%key%%", rorAutoInviter.Settings.inviteString);
+    local channel = "/" .. rorAutoInviter.Settings.broadcastChannel;
+    local command = towstring(channel .. " " .. message);
+    SendChatText (command, L"");
 end
 
 function rorAutoInviter.HandleAcceptCommand(parameter)
@@ -134,25 +150,35 @@ function rorAutoInviter.HandleAcceptCommand(parameter)
         rorAutoInviter.Settings.inviteAlliance = true;
         rorAutoInviter.Settings.inviteKnown = true;
         rorAutoInviter.Settings.inviteAll = true;
-    elseif parameter == 'off' then
+    elseif parameter == "off" then
         rorAutoInviter.Settings.inviteGuild = false;
         rorAutoInviter.Settings.inviteAlliance = false;
         rorAutoInviter.Settings.inviteKnown = false;
         rorAutoInviter.Settings.inviteAll = false;
     else
-        Print('Unknown argument:' ..parameter .."(Supported: guild, known, all, off)");
+        Print("Unknown argument:" ..parameter .."(Supported: guild, alliance, known, all, off)");
     end
     
-    Print('[AI] Guild: ' .. tostring(rorAutoInviter.Settings.inviteGuild));
-    Print('[AI] Alliance: ' .. tostring(rorAutoInviter.Settings.inviteAlliance));
-    Print('[AI] Known: ' .. tostring(rorAutoInviter.Settings.inviteKnown));
-    Print('[AI] All: ' .. tostring(rorAutoInviter.Settings.inviteAll));
+    Print("[AI] Guild: " .. tostring(rorAutoInviter.Settings.inviteGuild));
+    Print("[AI] Alliance: " .. tostring(rorAutoInviter.Settings.inviteAlliance));
+    Print("[AI] Known: " .. tostring(rorAutoInviter.Settings.inviteKnown));
+    Print("[AI] All: " .. tostring(rorAutoInviter.Settings.inviteAll));
 
 end
 
 function rorAutoInviter.HandleSetInviteKey(parameter)
     rorAutoInviter.Settings.inviteString = parameter;
     Print("[AI] Invite key set to :" ..parameter);
+end
+
+function rorAutoInviter.HandleSetBroadcastMessage(parameter)
+    rorAutoInviter.Settings.broadcastMessage = parameter;
+    Print("[AI] Broadcast message set to :" ..parameter);
+end
+
+function rorAutoInviter.HandleSetBroadcastChannel(parameter)
+    rorAutoInviter.Settings.broadcastChannel = parameter;
+    Print("[AI] Broadcast channel set to: " .. parameter);
 end
 
 function rorAutoInviter.SlashCmd(args)
@@ -169,20 +195,28 @@ function rorAutoInviter.SlashCmd(args)
 	
     if(command == "broadcast") then
         rorAutoInviter.HandleBroadcastCommand();
+    elseif command == "message" then
+        rorAutoInviter.HandleSetBroadcastMessage(parameter);
     elseif (command == "accept") then
         rorAutoInviter.HandleAcceptCommand(parameter);
     elseif (command == "key") then
         rorAutoInviter.HandleSetInviteKey(parameter);
+    elseif (command == "channel") then
+        rorAutoInviter.HandleSetBroadcastChannel(parameter);
     else
-        Print('---- RoR Auto Inviter ----');
-        Print('Commands :');
-        Print('/ai accept [guild | alliance | known | all | off]');
-        Print('Guild: ' .. tostring(rorAutoInviter.Settings.inviteGuild));
-        Print('Alliance: ' .. tostring(rorAutoInviter.Settings.inviteAlliance));
-        Print('Known: ' .. tostring(rorAutoInviter.Settings.inviteKnown));
-        Print('All: ' .. tostring(rorAutoInviter.Settings.inviteAll));
-        Print('/ai key [value] : Change the key for AA to invite a character.');
-        Print('CURRENT :' ..rorAutoInviter.Settings.inviteString);
-        Print('/ai broadcast : Broadcast a message into the guild chat to advertise your warband');
+        Print("---- RoR Auto Inviter ----");
+        Print("Commands :");
+        Print("/ai accept [guild | alliance | known | all | off]");
+        Print("Guild: " .. tostring(rorAutoInviter.Settings.inviteGuild));
+        Print("Alliance: " .. tostring(rorAutoInviter.Settings.inviteAlliance));
+        Print("Known: " .. tostring(rorAutoInviter.Settings.inviteKnown));
+        Print("All: " .. tostring(rorAutoInviter.Settings.inviteAll));
+        Print("/ai key [value] : Change the key for AA to invite a character.");
+        Print("CURRENT :" ..rorAutoInviter.Settings.inviteString);
+        Print("/ai channel [value] : Change the channel of the broadcast message");
+        Print("Current :" .. rorAutoInviter.Settings.broadcastChannel);
+        Print("/ai message [value] : Change the broadcast message. Use %key% to refer to the invite key.");
+        Print("Current :" .. rorAutoInviter.Settings.broadcastMessage);
+        Print("/ai broadcast : Broadcast a message into the guild chat to advertise your warband");
     end
 end
