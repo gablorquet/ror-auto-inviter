@@ -36,6 +36,8 @@ function rorAutoInviter.Migrate()
 
     --Migrate from v1
     if(not rorAutoInviter.Settings.version) then
+        rorAutoInviter.Settings.version = 2;
+        rorAutoInviter.Settings.inviteAlliance = true;
         rorAutoInviter.Settings.broadcastMessage = "WAR is going on! Send me a tell with %key% to get invited!";
         rorAutoInviter.Settings.broadcastChannel = "g";
     end
